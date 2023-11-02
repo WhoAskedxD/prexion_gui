@@ -15,8 +15,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("dicom Folders are ", dicomFolders)
+	dicomReference, err := anonymize_scans.GetScanNames(dicomFolders)
+	for key, value := range dicomReference {
+		fmt.Printf("parent folder is %s, while scan is %s\n", key, value)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
 	endTime := time.Now()
 	elapsedTime := endTime.Sub(startTime)
-	fmt.Printf("Elapsed time: %.2f seconds\n", elapsedTime.Seconds())
+	fmt.Printf("Total time Elapsed time: %.2f seconds\n", elapsedTime.Seconds())
 }
