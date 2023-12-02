@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/WhoAskedxD/anonymize_scans"
@@ -19,8 +21,17 @@ func main() {
 	startTime := time.Now()
 	folderPath := "/Users/harrymbp/Developer/Projects/PreXion/temp/"
 	outputPath := "/Volumes/Harrypc/temp/Anonymized scans"
-	//grab parentFolder and scan details related to that parent folder
-	dicomFolders, err := anonymize_scans.GetDicomFolders(folderPath)
+	enableLogging := true
+	AnonymizeAllScans(folderPath, outputPath, enableLogging)
+	endTime := time.Now()
+	elapsedTime := endTime.Sub(startTime)
+	fmt.Printf("Total time Elapsed time: %.2f seconds\n", elapsedTime.Seconds())
+}
+
+func AnonymizeAllScans(inputFolderPath, outputFolderPath string, enableLogging bool) {
+	fmt.Printf("------- Start of AnonymizeAllScans Script ---------\n")
+	// takes in the inputFolderPath and returns a map with the folderpath:scanDetails | scanDetails are map[scaninfo like fov|name|manufacture]details like the path or fov size and name of the patient
+	dicomFolders, err := anonymize_scans.GetDicomFolders(inputFolderPath, enableLogging)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,42 +40,51 @@ func main() {
 	// 	tag.PatientName: "new testing function",
 	// 	tag.PatientID:   "1700079492",
 	// }
-	//need to make a function to let users select which Tags they want to modify.
 	//create a rootUID and UnitUID = 1.2.392.200036.9163.99.9999
 	totalscans := len(dicomFolders)
 	fmt.Printf("found %d scans\n", totalscans)
+	//create a log file to keep track of modified scans
+	logFileName := filepath.Join(outputFolderPath, "ModifiedScans.txt")
+	logFile, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Error occured creating a log file for the modified scans.")
+	}
+	defer logFile.Close()
+	logger := log.New(logFile, "", log.LstdFlags)
 	counter := 0
 	for parentPath, scanDetails := range dicomFolders {
-		fmt.Printf("started working on scan: %s\n", parentPath)
+		fmt.Printf("working on scan: %s\n", parentPath)
 		//generate a map that associates each scan with a new output path
 		fmt.Printf("Generating output paths\n")
-		folderInfo, err := anonymize_scans.MakeOutputPath(parentPath, outputPath, counter, scanDetails)
+		folderInfo, err := anonymize_scans.MakeOutputPath(parentPath, outputFolderPath, counter, scanDetails, enableLogging)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("outputPaths are %s\n", folderInfo)
+		//grab the parent folder and assign it to newScanParentFolder
+		var newScanParentFolder string
+		for _, parentFolder := range folderInfo {
+			newScanParentFolder = filepath.Dir(parentFolder)
+			break
+		}
+		fmt.Printf("outputPaths are \n%s\n", folderInfo)
 		fmt.Printf("Generating new information for the dicom files\n")
-		//take rootid and time stamp and add them together to create a studyUID for the parent folder and add it to the current newPatientInfo
-		newPatientInfo, err := anonymize_scans.RandomizePatientInfo(scanDetails)
+		newPatientInfo, err := anonymize_scans.RandomizePatientInfo(scanDetails, enableLogging)
 		if err != nil {
 			log.Fatal(err)
 		}
 		//set the tag info for StudyInstanceuid to a value we will modify this when working with the scans.
 		newPatientInfo[tag.StudyInstanceUID] = "1.2.392.200036.9163.99.9999"
 		fmt.Printf("Finished generating new dicom info\n")
-		logResults, _ := anonymize_scans.LogAnonymizedScan(scanDetails, newPatientInfo)
-		fmt.Printf("Generating new dicoms\n")
-		err = anonymize_scans.MakeDicomFolders(folderInfo, newPatientInfo)
+		logResults, _ := anonymize_scans.LogAnonymizedScan(scanDetails, newPatientInfo, enableLogging)
+		fmt.Printf("Generating dicom files with the new patientInfo\n")
+		err = anonymize_scans.MakeStudyFolder(folderInfo, newPatientInfo, enableLogging)
 		if err != nil {
 			log.Fatal(err)
 		}
 		counter++
-		//test code block
-		fmt.Printf("finished anonymizing Dicoms for %s and ORGINIALPATIENTID is:%s, NEWPATIENTID is:%s\n", logResults["LOCATION"], logResults["ORGINIALPATIENTID"], logResults["NEWPATIENTID"])
+		fmt.Printf("finished anonymizing Dicoms for %s the new scan is located at %s\nORGINIALPATIENTID is:%s, NEWPATIENTID is:%s\n\n", logResults["LOCATION"], newScanParentFolder, logResults["ORGINIALPATIENTID"], logResults["NEWPATIENTID"])
+		logger.Printf("finished anonymizing Dicoms for %s the new scan is located at %s\nORGINIALPATIENTID is:%s, NEWPATIENTID is:%s\n\n", logResults["LOCATION"], newScanParentFolder, logResults["ORGINIALPATIENTID"], logResults["NEWPATIENTID"])
 		fmt.Printf("finished working on scan %d out of %d\n\n", counter, totalscans)
-		// break
 	}
-	endTime := time.Now()
-	elapsedTime := endTime.Sub(startTime)
-	fmt.Printf("Total time Elapsed time: %.2f seconds\n", elapsedTime.Seconds())
+	fmt.Printf("------- End of AnonymizeAllScans Script ---------\n\n")
 }
