@@ -7,27 +7,58 @@ import (
 	"path/filepath"
 	"time"
 
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/widget"
 	"github.com/WhoAskedxD/anonymize_scans"
 	"github.com/suyashkumar/dicom/pkg/tag"
 )
 
 //Notes
-//UID instances
-//Syntax for a UID is RootUID + Unit UID + Timestamp 17 digits long + SUBUID
-//example 1.2.392.200036.9163.31.0938.20231019103353867.1.1
-//ROOTUID = 1.2.392.200036.9163 | Unit UID = 31.0938 | Timestamp = 20231019103353867 || SUBUID = 1.1
 
 func main() {
 	startTime := time.Now()
-	folderPath := "/Users/harrymbp/Developer/Projects/PreXion/temp/"
-	outputPath := "/Volumes/Harrypc/temp/Anonymized scans"
-	enableLogging := true
-	AnonymizeAllScans(folderPath, outputPath, enableLogging)
+	// folderPath := "/Users/harrymbp/Developer/Projects/PreXion/temp/"
+	// outputPath := "/Volumes/Harrypc/temp/Anonymized scans"
+	// enableLogging := true
+	mainGuiWindow()
+	// AnonymizeAllScans(folderPath, outputPath, enableLogging)
 	endTime := time.Now()
 	elapsedTime := endTime.Sub(startTime)
 	fmt.Printf("Total time Elapsed time: %.2f seconds\n", elapsedTime.Seconds())
 }
 
+func mainGuiWindow() {
+	app := app.New()
+	mainWindow := app.NewWindow("PreXion Internal Tools V.0.0.1")
+
+	testLabel := widget.NewLabel("Testing label")
+	testLabel2 := widget.NewLabel("Testing label2")
+	testLabel3 := widget.NewLabel("Testing label3")
+	// testLabel4 := widget.NewLabel("Testing label4")
+	anonymizeLabel := widget.NewLabel("Anonymize")
+	toolsLabel := widget.NewLabel("Tools")
+	scriptsLabel := widget.NewLabel("Scripts")
+
+	// firstButton := widget.NewButton("Open new window", func() {
+	// 	log.Println("button clicked...")
+	// 	secondWindow := app.NewWindow("Second")
+	// 	secondWindow.SetContent(widget.NewLabel("second window label"))
+	// 	secondWindow.Show()
+	// })
+	topBorder := container.New(layout.NewGridLayout(3), anonymizeLabel, toolsLabel, scriptsLabel)
+	// border := container.New(layout.NewBorderLayout(anonymizeLabel, anonymizeLabel, toolsLabel, scriptsLabel))
+	content := container.NewBorder(topBorder, nil, testLabel2, testLabel3, testLabel)
+	mainWindow.SetMaster()
+	mainWindow.SetContent(content)
+	mainWindow.ShowAndRun()
+}
+
+// UID instances
+// Syntax for a UID is RootUID + Unit UID + Timestamp 17 digits long + SUBUID
+// example 1.2.392.200036.9163.31.0938.20231019103353867.1.1
+// ROOTUID = 1.2.392.200036.9163 | Unit UID = 31.0938 | Timestamp = 20231019103353867 || SUBUID = 1.1
 func AnonymizeAllScans(inputFolderPath, outputFolderPath string, enableLogging bool) {
 	fmt.Printf("------- Start of AnonymizeAllScans Script ---------\n")
 	// takes in the inputFolderPath and returns a map with the folderpath:scanDetails | scanDetails are map[scaninfo like fov|name|manufacture]details like the path or fov size and name of the patient
