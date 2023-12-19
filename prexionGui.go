@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -36,20 +37,25 @@ func mainGuiWindow() {
 	testLabel := widget.NewLabel("Testing label")
 	testLabel2 := widget.NewLabel("Testing label2")
 	testLabel3 := widget.NewLabel("Testing label3")
-	// testLabel4 := widget.NewLabel("Testing label4")
+	testLabel4 := widget.NewLabel("Testing label4")
 	anonymizeLabel := widget.NewLabel("Anonymize")
 	toolsLabel := widget.NewLabel("Tools")
 	scriptsLabel := widget.NewLabel("Scripts")
+	var leftborder *fyne.Container
+	//not working as intended
+	firstButton := widget.NewButton("Open new window", func() {
+		// secondWindow := app.NewWindow("Second")
+		// secondWindow.SetContent(widget.NewLabel("second window label"))
+		// secondWindow.Show()
+		leftborder = container.New(layout.NewVBoxLayout(), testLabel4, scriptsLabel)
+		log.Println("button clicked...")
 
-	// firstButton := widget.NewButton("Open new window", func() {
-	// 	log.Println("button clicked...")
-	// 	secondWindow := app.NewWindow("Second")
-	// 	secondWindow.SetContent(widget.NewLabel("second window label"))
-	// 	secondWindow.Show()
-	// })
-	topBorder := container.New(layout.NewGridLayout(3), anonymizeLabel, toolsLabel, scriptsLabel)
+	})
+	topBorder := container.New(layout.NewGridLayout(3), anonymizeLabel, toolsLabel, firstButton)
+	leftborder = container.New(layout.NewVBoxLayout(), testLabel2, testLabel3)
+
 	// border := container.New(layout.NewBorderLayout(anonymizeLabel, anonymizeLabel, toolsLabel, scriptsLabel))
-	content := container.NewBorder(topBorder, nil, testLabel2, testLabel3, testLabel)
+	content := container.NewBorder(topBorder, nil, leftborder, nil, testLabel)
 	mainWindow.SetMaster()
 	mainWindow.SetContent(content)
 	mainWindow.ShowAndRun()
