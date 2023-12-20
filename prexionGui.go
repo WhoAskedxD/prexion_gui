@@ -31,34 +31,56 @@ func main() {
 }
 
 func mainGuiWindow() {
+	//create a new application
 	app := app.New()
-	mainWindow := app.NewWindow("PreXion Internal Tools V.0.0.1")
+	mainWindow := app.NewWindow("PreXion Internal Tools V.0.0.1") //create a mainwindow for the application
+	//login objects
+	username := widget.NewEntry()
+	username.SetPlaceHolder("Username")
+	password := widget.NewEntry()
+	password.SetPlaceHolder("password")
+	message := widget.NewLabel("Wrong Password")
+	message.Hide() //hide the message by default if password is correcet then show it
+	loginForm := container.New(layout.NewFormLayout(), widget.NewLabel("login"), username, widget.NewLabel("password"), password)
 
-	testLabel := widget.NewLabel("Testing label")
-	testLabel2 := widget.NewLabel("Testing label2")
-	testLabel3 := widget.NewLabel("Testing label3")
-	testLabel4 := widget.NewLabel("Testing label4")
-	anonymizeLabel := widget.NewLabel("Anonymize")
-	toolsLabel := widget.NewLabel("Tools")
-	scriptsLabel := widget.NewLabel("Scripts")
-	var leftborder *fyne.Container
-	//not working as intended
-	firstButton := widget.NewButton("Open new window", func() {
-		// secondWindow := app.NewWindow("Second")
-		// secondWindow.SetContent(widget.NewLabel("second window label"))
-		// secondWindow.Show()
-		leftborder = container.New(layout.NewVBoxLayout(), testLabel4, scriptsLabel)
-		log.Println("button clicked...")
+	//create views and their tabs
+	// anonymizeContent := container.NewVBox(widget.NewLabel("content"))
+	anonymizeTabsContainer := container.NewVBox(widget.NewButton("Scan info", nil), widget.NewButton("Anonymize Scans", nil))
+	anonymizeView := container.NewHSplit(anonymizeTabsContainer, widget.NewLabel("split view!"))
+	anonymizeView.Offset = 0.2 //offsets the split view left side is smaller.
+	scriptsView := container.NewCenter(widget.NewLabel("Scripts view!"))
+	toolsView := container.NewCenter(widget.NewLabel("Tools view!"))
+	//create main tab
+	mainTabsContainer := container.NewAppTabs(
+		container.NewTabItem("Anonymize", anonymizeView),
+		container.NewTabItem("Scripts", scriptsView),
+		container.NewTabItem("Tools", toolsView),
+	)
 
+	// testLabel := widget.NewLabel("TestLabel") //test label widget
+	loginButton := widget.NewButton("Login", func() {
+		//check if login is correct.
+		log.Printf("username was:%s and pass entered was:%s", username.Text, password.Text)
+		//if login is correct change the content screen to the maincontent
+		if username.Text == "admin" && password.Text == "admin" {
+			// topBorder, leftBorder := anonymizeWindow(mainWindow)
+			mainWindow.SetContent(mainTabsContainer)
+		} else {
+			message.Show() //unhide the message label
+		}
 	})
-	topBorder := container.New(layout.NewGridLayout(3), anonymizeLabel, toolsLabel, firstButton)
-	leftborder = container.New(layout.NewVBoxLayout(), testLabel2, testLabel3)
 
-	// border := container.New(layout.NewBorderLayout(anonymizeLabel, anonymizeLabel, toolsLabel, scriptsLabel))
-	content := container.NewBorder(topBorder, nil, leftborder, nil, testLabel)
 	mainWindow.SetMaster()
-	mainWindow.SetContent(content)
+	mainWindow.Resize(fyne.NewSize(400, 200))
+	mainWindow.SetContent(container.New(layout.NewVBoxLayout(), loginForm, loginButton, message))
 	mainWindow.ShowAndRun()
+}
+func anonymizeContent(context int) {
+	switch context {
+	case 0: //Scan info menu was chosen
+		content := widget.NewLabel("Scan info menu was chosen")
+	}
+
 }
 
 // UID instances
