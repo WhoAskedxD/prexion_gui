@@ -34,22 +34,22 @@ func mainGuiWindow() {
 	//create a new application
 	app := app.New()
 	mainWindow := app.NewWindow("PreXion Internal Tools V.0.0.1") //create a mainwindow for the application
+	mainContainer := container.NewWithoutLayout()
 	//login objects
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Username")
+
 	password := widget.NewEntry()
+	password.Password = true
 	password.SetPlaceHolder("password")
-	message := widget.NewLabel("Wrong Password")
-	message.Hide() //hide the message by default if password is correcet then show it
+	// message := widget.NewLabel("Wrong Password")
+	// message.Hide() //hide the message by default if password is correcet then show it
 	loginForm := container.New(layout.NewFormLayout(), widget.NewLabel("login"), username, widget.NewLabel("password"), password)
 
 	//create views and their tabs
-	// anonymizeContent := container.NewVBox(widget.NewLabel("content"))
-	anonymizeTabsContainer := container.NewVBox(widget.NewButton("Scan info", nil), widget.NewButton("Anonymize Scans", nil))
-	anonymizeView := container.NewHSplit(anonymizeTabsContainer, widget.NewLabel("split view!"))
-	anonymizeView.Offset = 0.2 //offsets the split view left side is smaller.
-	scriptsView := container.NewCenter(widget.NewLabel("Scripts view!"))
-	toolsView := container.NewCenter(widget.NewLabel("Tools view!"))
+	anonymizeView := anonymizeContent()
+	scriptsView := scriptContent()
+	toolsView := toolsContent()
 	//create main tab
 	mainTabsContainer := container.NewAppTabs(
 		container.NewTabItem("Anonymize", anonymizeView),
@@ -59,28 +59,76 @@ func mainGuiWindow() {
 
 	// testLabel := widget.NewLabel("TestLabel") //test label widget
 	loginButton := widget.NewButton("Login", func() {
-		//check if login is correct.
-		log.Printf("username was:%s and pass entered was:%s", username.Text, password.Text)
-		//if login is correct change the content screen to the maincontent
-		if username.Text == "admin" && password.Text == "admin" {
-			// topBorder, leftBorder := anonymizeWindow(mainWindow)
-			mainWindow.SetContent(mainTabsContainer)
-		} else {
-			message.Show() //unhide the message label
-		}
+		loginFunction(username.Text, password.Text, mainWindow, mainContainer, mainTabsContainer)
 	})
-
 	mainWindow.SetMaster()
 	mainWindow.Resize(fyne.NewSize(400, 200))
-	mainWindow.SetContent(container.New(layout.NewVBoxLayout(), loginForm, loginButton, message))
+	mainContainer = container.New(layout.NewVBoxLayout(), loginForm, loginButton)
+	mainWindow.SetContent(mainContainer)
+	mainWindow.Canvas().Focus(username)
+	username.OnSubmitted = func(p string) {
+		loginFunction(username.Text, p, mainWindow, mainContainer, mainTabsContainer)
+	}
+	password.OnSubmitted = func(p string) {
+		loginFunction(username.Text, p, mainWindow, mainContainer, mainTabsContainer)
+	}
 	mainWindow.ShowAndRun()
 }
-func anonymizeContent(context int) {
-	switch context {
-	case 0: //Scan info menu was chosen
-		content := widget.NewLabel("Scan info menu was chosen")
+
+// takes in username and password as well as the window and tabs we want, if login is correct change the mainwindows content to the default page.
+func loginFunction(username, password string, mainWindow fyne.Window, mainContainer *fyne.Container, mainTabsContainer *container.AppTabs) {
+	length := len(mainContainer.Objects)
+	log.Printf("username is:%s password is:%s length is %d", username, password, length)
+	if username == "admin" && password == "admin" {
+		mainWindow.SetContent(mainTabsContainer)
+	} else if length <= 2 {
+		mainContainer.Add(widget.NewLabel("Wrong Password"))
+	}
+}
+
+// generates the Content or canvas for the the anonymize view.
+func anonymizeContent() *container.Split {
+	var anonymizeView *container.Split
+	content := container.New(layout.NewVBoxLayout(), widget.NewLabel("Input Path"), widget.NewEntry(), widget.NewLabel("new button should be here"))
+	anonymizeTabsContainer := container.NewVBox(widget.NewButton("Scan info", func() {
+		anonymizeScansView(0, content)
+	}), widget.NewButton("Anonymize Scans", func() {
+		anonymizeScansView(1, content)
+	}))
+	anonymizeView = container.NewHSplit(anonymizeTabsContainer, content)
+	anonymizeView.Offset = 0.2 //offsets the split view left side is smaller.
+	return anonymizeView
+}
+func anonymizeScansView(tab int, content *fyne.Container) {
+	switch tab {
+	case 1: //second tab option to anonymize scans using default settings.
+		content.RemoveAll()
+		inputPath := widget.NewEntry()
+		anonymizeButton := widget.NewButton("Anonymize!", func() {
+			log.Println("inputpath is:", inputPath.Text)
+		})
+		content.Add(container.New(layout.NewVBoxLayout(), widget.NewLabel("Input Path"), inputPath, anonymizeButton))
+	default: //first tab option grabs the scan info from the input path provided.
+		content.RemoveAll()
+		content.Add(container.New(layout.NewFormLayout(), widget.NewLabel("Input Path"), widget.NewEntry(), widget.NewLabel("Outputpath"), widget.NewEntry()))
 	}
 
+}
+
+// generates the Content or canvas for the the script view.
+func scriptContent() *container.Split {
+	scriptTabs := container.NewVBox(widget.NewButton("script tab 1", nil), widget.NewButton("script tab 2", nil))
+	scriptsView := container.NewHSplit(scriptTabs, widget.NewLabel("Script view!"))
+	scriptsView.Offset = 0.2
+	return scriptsView
+}
+
+// generates the Content or canvas for the the tools view.
+func toolsContent() *container.Split {
+	toolsTabs := container.NewVBox(widget.NewButton("tools tab 1", nil), widget.NewButton("tool tabs 2", nil))
+	toolsView := container.NewHSplit(toolsTabs, widget.NewLabel("Tools view!"))
+	toolsView.Offset = 0.2 //offsets the split view left side is smaller.
+	return toolsView
 }
 
 // UID instances
