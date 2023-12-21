@@ -34,7 +34,6 @@ func mainGuiWindow() {
 	//create a new application
 	app := app.New()
 	mainWindow := app.NewWindow("PreXion Internal Tools V.0.0.1") //create a mainwindow for the application
-	mainContainer := container.NewWithoutLayout()
 	//login objects
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Username")
@@ -43,26 +42,28 @@ func mainGuiWindow() {
 	password.SetPlaceHolder("password")
 	loginForm := container.New(layout.NewFormLayout(), widget.NewLabel("login"), username, widget.NewLabel("password"), password)
 
-	mainTabsContainer := contentTabs(mainWindow)
 	loginButton := widget.NewButton("Login", func() {
-		loginFunction(username.Text, password.Text, mainWindow, mainContainer, mainTabsContainer)
+		loginFunction(username.Text, password.Text, mainWindow)
 	})
 	mainWindow.SetMaster()
 	mainWindow.Resize(fyne.NewSize(400, 200))
-	mainContainer = container.New(layout.NewVBoxLayout(), loginForm, loginButton)
+	mainContainer := container.New(layout.NewVBoxLayout(), loginForm, loginButton)
 	mainWindow.SetContent(mainContainer)
 	mainWindow.Canvas().Focus(username)
 	username.OnSubmitted = func(p string) {
-		loginFunction(username.Text, p, mainWindow, mainContainer, mainTabsContainer)
+		loginFunction(p, password.Text, mainWindow)
 	}
 	password.OnSubmitted = func(p string) {
-		loginFunction(username.Text, p, mainWindow, mainContainer, mainTabsContainer)
+		loginFunction(username.Text, p, mainWindow)
 	}
 	mainWindow.ShowAndRun()
 }
 
 // takes in username and password as well as the window and tabs we want, if login is correct change the mainwindows content to the default page.
-func loginFunction(username, password string, mainWindow fyne.Window, mainContainer *fyne.Container, mainTabsContainer *container.AppTabs) {
+func loginFunction(username, password string, mainWindow fyne.Window) {
+	mainTabsContainer := contentTabs(mainWindow)
+	mainContainer := mainWindow.Content().(*fyne.Container) //how to access the content as a container
+	log.Println("testContainer is ", mainContainer)
 	length := len(mainContainer.Objects)
 	log.Printf("username is:%s password is:%s length is %d", username, password, length)
 	if username == "admin" && password == "admin" {
@@ -78,7 +79,6 @@ func contentTabs(mainWindow fyne.Window) *container.AppTabs {
 	anonymizeView := anonymizeContent()
 	scriptsView := scriptContent()
 	toolsView := toolsContent()
-
 	mainTabsContainer := container.NewAppTabs(
 		container.NewTabItem("Anonymize", anonymizeView),
 		container.NewTabItem("Scripts", scriptsView),
