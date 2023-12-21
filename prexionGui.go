@@ -38,26 +38,12 @@ func mainGuiWindow() {
 	//login objects
 	username := widget.NewEntry()
 	username.SetPlaceHolder("Username")
-
 	password := widget.NewEntry()
 	password.Password = true
 	password.SetPlaceHolder("password")
-	// message := widget.NewLabel("Wrong Password")
-	// message.Hide() //hide the message by default if password is correcet then show it
 	loginForm := container.New(layout.NewFormLayout(), widget.NewLabel("login"), username, widget.NewLabel("password"), password)
 
-	//create views and their tabs
-	anonymizeView := anonymizeContent()
-	scriptsView := scriptContent()
-	toolsView := toolsContent()
-	//create main tab
-	mainTabsContainer := container.NewAppTabs(
-		container.NewTabItem("Anonymize", anonymizeView),
-		container.NewTabItem("Scripts", scriptsView),
-		container.NewTabItem("Tools", toolsView),
-	)
-
-	// testLabel := widget.NewLabel("TestLabel") //test label widget
+	mainTabsContainer := contentTabs(mainWindow)
 	loginButton := widget.NewButton("Login", func() {
 		loginFunction(username.Text, password.Text, mainWindow, mainContainer, mainTabsContainer)
 	})
@@ -86,33 +72,48 @@ func loginFunction(username, password string, mainWindow fyne.Window, mainContai
 	}
 }
 
+// make default tabs
+func contentTabs(mainWindow fyne.Window) *container.AppTabs {
+	//create views and their tabs
+	anonymizeView := anonymizeContent()
+	scriptsView := scriptContent()
+	toolsView := toolsContent()
+
+	mainTabsContainer := container.NewAppTabs(
+		container.NewTabItem("Anonymize", anonymizeView),
+		container.NewTabItem("Scripts", scriptsView),
+		container.NewTabItem("Tools", toolsView),
+	)
+	return mainTabsContainer
+}
+
 // generates the Content or canvas for the the anonymize view.
 func anonymizeContent() *container.Split {
-	var anonymizeView *container.Split
-	content := container.New(layout.NewVBoxLayout(), widget.NewLabel("Input Path"), widget.NewEntry(), widget.NewLabel("new button should be here"))
-	anonymizeTabsContainer := container.NewVBox(widget.NewButton("Scan info", func() {
+	content := container.New(layout.NewVBoxLayout()) //create a new container with the vbox layout
+	anonymizeScansView(0, content)
+	anonymizeTabsContainer := container.NewVBox(widget.NewButton("Anonymize Scans", func() {
 		anonymizeScansView(0, content)
-	}), widget.NewButton("Anonymize Scans", func() {
+	}), widget.NewButton("Scan Info", func() {
 		anonymizeScansView(1, content)
 	}))
-	anonymizeView = container.NewHSplit(anonymizeTabsContainer, content)
+	anonymizeView := container.NewHSplit(anonymizeTabsContainer, content)
 	anonymizeView.Offset = 0.2 //offsets the split view left side is smaller.
 	return anonymizeView
 }
 func anonymizeScansView(tab int, content *fyne.Container) {
 	switch tab {
-	case 1: //second tab option to anonymize scans using default settings.
+	case 1: //second tab grabs the scan data from the path provided.
 		content.RemoveAll()
+		content.Add(container.New(layout.NewFormLayout(), widget.NewLabel("Input Path"), widget.NewEntry(), widget.NewLabel("Outputpath"), widget.NewEntry()))
+	default: //first tab option Anonymize Scans with a given input and output directory and uses the default settings
+		content.RemoveAll() //removes all the obejcts in the container then adds new ones.
 		inputPath := widget.NewEntry()
+		outputpath := widget.NewEntry()
 		anonymizeButton := widget.NewButton("Anonymize!", func() {
 			log.Println("inputpath is:", inputPath.Text)
 		})
-		content.Add(container.New(layout.NewVBoxLayout(), widget.NewLabel("Input Path"), inputPath, anonymizeButton))
-	default: //first tab option grabs the scan info from the input path provided.
-		content.RemoveAll()
-		content.Add(container.New(layout.NewFormLayout(), widget.NewLabel("Input Path"), widget.NewEntry(), widget.NewLabel("Outputpath"), widget.NewEntry()))
+		content.Add(container.New(layout.NewVBoxLayout(), widget.NewLabel("Input Path"), inputPath, widget.NewLabel("outputpath Path"), outputpath, anonymizeButton))
 	}
-
 }
 
 // generates the Content or canvas for the the script view.
