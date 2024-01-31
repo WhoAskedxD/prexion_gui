@@ -10,6 +10,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"github.com/WhoAskedxD/anonymize_scans"
@@ -63,7 +64,6 @@ func mainGuiWindow() {
 func loginFunction(username, password string, mainWindow fyne.Window) {
 	mainTabsContainer := contentTabs(mainWindow)
 	mainContainer := mainWindow.Content().(*fyne.Container) //how to access the content as a container
-	log.Println("testContainer is ", mainContainer)
 	length := len(mainContainer.Objects)
 	log.Printf("username is:%s password is:%s length is %d", username, password, length)
 	if username == "admin" && password == "admin" {
@@ -76,7 +76,7 @@ func loginFunction(username, password string, mainWindow fyne.Window) {
 // make default tabs
 func contentTabs(mainWindow fyne.Window) *container.AppTabs {
 	//create views and their tabs
-	anonymizeView := anonymizeContent()
+	anonymizeView := anonymizeContent(mainWindow)
 	scriptsView := scriptContent()
 	toolsView := toolsContent()
 	mainTabsContainer := container.NewAppTabs(
@@ -84,36 +84,63 @@ func contentTabs(mainWindow fyne.Window) *container.AppTabs {
 		container.NewTabItem("Scripts", scriptsView),
 		container.NewTabItem("Tools", toolsView),
 	)
+	mainWindow.Resize(fyne.NewSize(600, 300))
 	return mainTabsContainer
 }
 
 // generates the Content or canvas for the the anonymize view.
-func anonymizeContent() *container.Split {
+func anonymizeContent(mainWindow fyne.Window) *container.Split {
 	content := container.New(layout.NewVBoxLayout()) //create a new container with the vbox layout
-	anonymizeScansView(0, content)
+	anonymizeScansView(0, content, mainWindow)
 	anonymizeTabsContainer := container.NewVBox(widget.NewButton("Anonymize Scans", func() {
-		anonymizeScansView(0, content)
+		anonymizeScansView(0, content, mainWindow)
 	}), widget.NewButton("Scan Info", func() {
-		anonymizeScansView(1, content)
+		anonymizeScansView(1, content, mainWindow)
 	}))
 	anonymizeView := container.NewHSplit(anonymizeTabsContainer, content)
 	anonymizeView.Offset = 0.2 //offsets the split view left side is smaller.
 	return anonymizeView
 }
-func anonymizeScansView(tab int, content *fyne.Container) {
+func anonymizeScansView(tab int, content *fyne.Container, mainWindow fyne.Window) {
+	content.RemoveAll() //removes all the obejcts in the container then adds new ones.
+	displayOutput := widget.NewLabel("placeholder")
+	displayOutput.Hide()
 	switch tab {
 	case 1: //second tab grabs the scan data from the path provided.
-		content.RemoveAll()
-		content.Add(container.New(layout.NewFormLayout(), widget.NewLabel("Input Path"), widget.NewEntry(), widget.NewLabel("Outputpath"), widget.NewEntry()))
+		content.Add(container.New(layout.NewVBoxLayout(), widget.NewLabel("Input Path"), widget.NewEntry(), widget.NewLabel("Outputpath"), widget.NewEntry(), displayOutput))
 	default: //first tab option Anonymize Scans with a given input and output directory and uses the default settings
-		content.RemoveAll() //removes all the obejcts in the container then adds new ones.
 		inputPath := widget.NewEntry()
+		inputPathButton := widget.NewButton("Input Path", func() {
+			handleFolderSelection(inputPath, mainWindow)
+		})
 		outputpath := widget.NewEntry()
+		outputPathButton := widget.NewButton("Output Path", func() {
+			handleFolderSelection(outputpath, mainWindow)
+		})
 		anonymizeButton := widget.NewButton("Anonymize!", func() {
 			log.Println("inputpath is:", inputPath.Text)
+			log.Println("outputPath is:", outputpath.Text)
+			displayOutput.SetText(inputPath.Text)
+			displayOutput.Show()
 		})
-		content.Add(container.New(layout.NewVBoxLayout(), widget.NewLabel("Input Path"), inputPath, widget.NewLabel("outputpath Path"), outputpath, anonymizeButton))
+		content.Add(container.New(layout.NewVBoxLayout(), inputPathButton, inputPath, outputPathButton, outputpath, anonymizeButton, displayOutput))
 	}
+}
+
+// takes an entry widget and main window create a dialog box showing folder selection option
+func handleFolderSelection(entry *widget.Entry, parent fyne.Window) {
+	dialog.ShowFolderOpen(func(list fyne.ListableURI, err error) {
+		if err != nil {
+			dialog.ShowError(err, parent)
+			return
+		}
+		if list == nil {
+			log.Println("Cancelled")
+			return
+		}
+		// Set the selected folder path to the entry field
+		entry.SetText(list.Path())
+	}, parent)
 }
 
 // generates the Content or canvas for the the script view.
